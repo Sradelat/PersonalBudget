@@ -23,9 +23,15 @@ def home():
 
 
 def amex():  # uses American Express CSV
-    path = input("Please enter the file path: ")  # csv file downloaded from website - sorry will not provide mine :)
-    df = pd.read_csv(path, delimiter=",",
-                     parse_dates=True, skipinitialspace=True)
+
+    while True:
+        path = input("Please enter the file path: ")  # csv file downloaded from website - sorry will not provide mine :)
+        try:  # for valid file  # TODO add confirmation upon showing file contents
+            df = pd.read_csv(path, delimiter=",",
+                             parse_dates=True, skipinitialspace=True)
+            break
+        except FileNotFoundError as error:  # catch invalid file entered
+            print(error)
 
     df = df.loc[df["Description"] != "AUTOPAY PAYMENT - THANK YOU"]
     df = df.iloc[::-1].reset_index(drop=True)  # reverse the df
@@ -69,12 +75,16 @@ def amex():  # uses American Express CSV
             elif answer.split(" ")[0] == "!split":  # splits specified amount into specified category
                 try:
                     split = float(answer.split()[1])  # answer is passed to fx not split
-                except ValueError:
+                except (ValueError, IndexError):  # catches if amount and category are swapped (wrong format)
                     print("ERROR: Unexpected format. Expected format for this command: !split amount category")
                     input("Press enter to acknowledge.")
                     continue
-                if split > float(amount):
+                if split > float(amount):  # catches entered amounts larger than actual amount
                     print("ERROR: Split amount entered exceeds original amount.")
+                    input("Press enter to acknowledge.")
+                    continue
+                if len(str(answer).split()[1].split(".")[1]) > 2:  # catches if too many decimals are entered
+                    print("ERROR. Too many decimal places entered.")
                     input("Press enter to acknowledge.")
                     continue
                 else:
@@ -82,11 +92,14 @@ def amex():  # uses American Express CSV
                         amount = split_transaction(answer, amount, categories)  # returns remaining amount
                         continue
                         # TODO split errors and other command errors
-                    except IndexError:
+                        #  combine split errors into split fx?
+                        #  condense errors by assigning .split values before passing into fx?
+                        #  delete cat command? could put remaining value into another cat - mostly for typos
+                    except IndexError:  # catches if .split values are not correct amount (3) as in format below
                         print("ERROR. Unexpected format. Expected format for this command: !split amount category")
                         input("Press enter to acknowledge.")
                         continue
-                    except KeyError:
+                    except KeyError:  # catches invalid entered category
                         print("ERROR. Invalid category.")
                         input("Press enter to acknowledge.")
                         continue
@@ -382,11 +395,6 @@ def add_category(answer, categories):
 
 
 def split_transaction(answer, amount, categories):
-    print(len(str(answer).split()[1].split(".")[1]))
-    if len(str(answer).split()[1].split(".")[1]) > 2:
-        print("ERROR. Too many decimal places entered.")
-        input("Press enter to acknowledge.")
-        return amount
     split_amount = answer.split(" ")[1]
     split_category = answer.split(" ")[2]
     amount = round(float(amount) - float(split_amount), 2)

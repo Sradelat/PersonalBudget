@@ -2,8 +2,6 @@ import PersonalBudget
 
 # TODO
 #  Populate excel sheet,
-#  throw error for wrong file,
-#  catch splits that exceed amount
-#  check if using pandas displays columns
+#  throw error for wrong file
 
 PersonalBudget.home()
