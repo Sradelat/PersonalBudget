@@ -26,23 +26,23 @@ def amex():  # uses American Express CSV
 
     while True:
         path = input("Please enter the file path: ")  # csv file downloaded from website - sorry will not provide mine :)
-        try:  # for valid file  # TODO add confirmation upon showing file contents
+        try:  # for valid file  # TODO add confirmation upon showing file contents?
             df = pd.read_csv(path, delimiter=",",
                              parse_dates=True, skipinitialspace=True)
             break
         except FileNotFoundError as error:  # catch invalid file entered
             print(error)
 
-    df = df.loc[df["Description"] != "AUTOPAY PAYMENT - THANK YOU"]
+    df = df.loc[df["Description"] != "AUTOPAY PAYMENT - THANK YOU"]  # remove bill payments for total accuracy
     df = df.iloc[::-1].reset_index(drop=True)  # reverse the df
     df["Description"] = df.Description.str.split().str[:].apply(lambda x: " ".join(x))  # goodbye whitespace
-    print(df)
+    print(df)  # display for user
     start_date = df["Date"].iloc[0]
     end_date = df["Date"].iloc[-1]
-    all_total = round(df["Amount"].sum(), 2)
+    all_total = round(df["Amount"].sum(), 2)  # sum of transactions
     statement_date = f"{start_date} - {end_date}"
-    print(f"AMEX STATEMENT DATE: {statement_date} ")
-    print(f"OVERALL TOTAL: {all_total}")
+    print(f"AMEX STATEMENT DATE: {statement_date} ")  # show statement date range
+    print(f"OVERALL TOTAL: {all_total}")  # show total
     input("\nPress enter to initiate manual categorizing.")
     categories = {"food": 0, "gas": 0, "life": 0, "pets": 0}  # default categories
 
@@ -68,10 +68,48 @@ def amex():  # uses American Express CSV
             if answer.split(" ")[0] == "!addcat":  # adds new category with 0 value
                 add_category(answer, categories)
                 continue
+            elif answer.split(" ")[0] == "!delcat":  # deletes category and forwards remaining value-don't want in plot
+                if categories[answer.split()[1]] != 0:
+                    print(f"\nWARNING! Category {answer.split()[1]} has a value of {categories[answer.split()[1]]}.")
+                    print("Would you like to transfer this amount into another category before deletion?"
+                          "\n1. Yes"
+                          "\n2. No")
+                    while True:
+                        cattrans = input(">")
+                        if cattrans == "1":
+                            while True:
+                                print(f"\nWhich category would you like to add {categories[answer.split()[1]]} to?")
+                                new_cats = ""
+                                transamount = categories[answer.split()[1]]  # pull amount before deletion
+                                for k, v in categories.items():
+                                    if k != answer.split()[1]:  # exclude category to be deleted
+                                        new_cats += f"[{k}] "  # generate updated categories
+                                print(f"Valid categories: {new_cats}")  # show updated categories
+                                add_to = input(">")  # specified category
+                                success = update_category_value(add_to, categories, transamount)
+                                if success is True:  # delete category and continue
+                                    categories.pop(answer.split()[1])  # deletes category
+                                    print(f"\nCategory {answer.split()[1]} has been deleted.")
+                                    break
+                                if success is False:  # try again
+                                    continue
+                            break
+                        elif cattrans == "2":
+                            categories.pop(answer.split()[1])
+                            print(f"Category {answer.split()[1]} has been deleted.")
+                            break
+                        else:
+                            print("ERROR. Invalid command. Enter a number, 1 or 2.")
+                            continue
             elif answer.split(" ")[0] == "!return":  # if transaction is a money back return
-                categories[answer.split(" ")[1]] = round(float(categories[answer.split(" ")[1]]) +
-                                                         float(amount), 2)
-                break
+                try:
+                    categories[answer.split(" ")[1]] = round(float(categories[answer.split(" ")[1]]) +
+                                                             float(amount), 2)
+                    break
+                except KeyError:
+                    print("ERROR. Invalid category. Expected form for this command: !return category")
+                    input("Press enter to acknowledge.")
+                    continue
             elif answer.split(" ")[0] == "!split":  # splits specified amount into specified category
                 try:
                     split = float(answer.split()[1])  # answer is passed to fx not split
@@ -91,10 +129,9 @@ def amex():  # uses American Express CSV
                     try:
                         amount = split_transaction(answer, amount, categories)  # returns remaining amount
                         continue
-                        # TODO split errors and other command errors
+                        # TODO other command errors
                         #  combine split errors into split fx?
                         #  condense errors by assigning .split values before passing into fx?
-                        #  delete cat command? could put remaining value into another cat - mostly for typos
                     except IndexError:  # catches if .split values are not correct amount (3) as in format below
                         print("ERROR. Unexpected format. Expected format for this command: !split amount category")
                         input("Press enter to acknowledge.")
@@ -417,6 +454,7 @@ def totals(categories):
 def help_command():
     print("\nCommands:\n"
           "!addcat category       -- adds a new category that you name\n"
+          "!delcat category       -- deletes category you specify"
           "!totals                -- shows current totals for each category\n"
           "!return category       -- denotes a return and returns to category you specify\n"
           "!split amount category -- splits an amount from original amount into category\n")

@@ -2,6 +2,6 @@ import PersonalBudget
 
 # TODO
 #  Populate excel sheet,
-#  throw error for wrong file
+#  replace Wells Fargo with Chase account
 
 PersonalBudget.home()
