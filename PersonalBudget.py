@@ -75,7 +75,7 @@ def amex():  # uses American Express CSV
                     print("ERROR. INVALID CATEGORY. Please try again.")
                     input("Press enter to acknowledge.")
                     continue
-                elif categories[answer.split()[1]] != 0:
+                elif categories[answer.split()[1]] != 0:  # if category has a non-zero value
                     print(f"\nWARNING! Category {answer.split()[1]} has a value of "
                           f"{categories[answer.split()[1]]}.")
                     print("Would you like to transfer this amount into another category before deletion?"

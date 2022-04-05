@@ -1,5 +1,5 @@
 # My Personal Budget Calculator
-*Project complete but will need updates. It's all for my wife.*
+*Project complete but will receive updates because it's for my wife.*
 
 This project is for practical personal use, but it is also a display of my work.
 
